@@ -11,21 +11,40 @@ export default function TransportTracker() {
   const [buses, setBuses] = useState<LiveBus[]>(mockLiveBuses);
   const [selectedRoute, setSelectedRoute] = useState<string>('all');
   const [searchStop, setSearchStop] = useState<string>('');
-  const [time, setTime] = useState<Date>(new Date());
+  const [time, setTime] = useState<Date | null>(null);
   const [activeTab, setActiveTab] = useState<'live' | 'routes' | 'stops'>('live');
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTime(new Date());
-      // Simulate live movement
-      setBuses(prev => prev.map(bus => ({
+  // Set time only after the component mounts in the browser
+  setTime(new Date());
+
+  // Update clock every second
+  const clockTimer = setInterval(() => {
+    setTime(new Date());
+  }, 1000);
+
+  // Simulate live bus movement every 5 seconds
+  const busTimer = setInterval(() => {
+    setBuses(prev =>
+      prev.map(bus => ({
         ...bus,
-        eta: Math.max(1, bus.eta + (Math.random() > 0.5 ? 1 : -1)),
-        speed: Math.max(20, Math.min(60, bus.speed + (Math.random() - 0.5) * 5)),
-      })));
-    }, 5000);
-    return () => clearInterval(timer);
-  }, []);
+        eta: Math.max(
+          1,
+          bus.eta + (Math.random() > 0.5 ? 1 : -1)
+        ),
+        speed: Math.max(
+          20,
+          Math.min(60, bus.speed + (Math.random() - 0.5) * 5)
+        ),
+      }))
+    );
+  }, 5000);
+
+  return () => {
+    clearInterval(clockTimer);
+    clearInterval(busTimer);
+  };
+}, []);
 
   const filteredBuses = buses.filter(b =>
     selectedRoute === 'all' || b.routeId === selectedRoute
@@ -81,8 +100,8 @@ export default function TransportTracker() {
           <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981',
             animation: 'pulse 2s infinite' }} />
           <span style={{ fontSize: 13, color: '#10b981' }}>
-            Live • {time.toLocaleTimeString()}
-          </span>
+  Live • {time ? time.toLocaleTimeString() : 'Loading time...'}
+</span>
         </div>
       </div>
 
